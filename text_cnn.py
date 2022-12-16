@@ -3,6 +3,8 @@ import random
 import torch
 from tqdm import tqdm
 from icecream import ic
+import torch.nn as nn
+import torch.nn.functional as F
 
 
 WORD_EMBEDDING_FILE = 'dataset/sgns.weibo.word.bz2'
@@ -38,6 +40,42 @@ def get_embedding(vocabulary: set):
     embedding = [id2vec[_id] for _id in range(len(id2vec))]
 
     return torch.tensor(embedding, dtype=torch.float), token2id, len(vocabulary) + SPECIAL_TOKEN_NUM
+
+
+class TextCNN(nn.Module):
+    def __init__(self, word_embedding, each_filter_num, filter_heights, drop_out, num_classes):
+        super(TextCNN, self).__init__()
+        self.embedding = nn.Embedding.from_pretrained(word_embedding, freeze=True)
+        self.convs = nn.ModuleList([
+            nn.Conv2d(in_channels=1, out_channels=each_filter_num,
+                      kernel_size=(h, word_embedding.shape[0]))
+            for h in filter_heights
+        ])
+
+        self.dropout = nn.Dropout(drop_out)
+        self.fc = nn.Linear(each_filter_num * len(filter_heights), num_classes)
+
+    def conv_and_pool(self, x, conv):
+            x = F.relu(conv(x)).squeeze(3)
+            x = F.max_pool1d(x, x.size(2)).squeeze(2)
+
+            return x
+
+    def forward(self, input_ids=None, labels=None):
+        word_embeddings = self.embedding(input_ids)
+        sentence_embeddings = word_embeddings.unsqueeze(1)
+
+        out = torch.cat([self.conv_and_pool(sentence_embeddings, conv) for conv in self.convs], 1)
+        out = self.dropout(out)
+        out = self.fc(out)
+
+        if labels:
+            loss_fn = nn.CrossEntropyLoss()
+            loss = loss_fn(out, labels)
+            outputs = (loss, ) + outputs
+
+        return outputs
+
 
 
 if __name__ == '__main__':
