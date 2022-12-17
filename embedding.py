@@ -2,7 +2,6 @@ import bz2
 import random
 import torch
 from tqdm import tqdm
-from icecream import ic
 
 
 WORD_EMBEDDING_FILE = 'dataset/sgns.weibo.word.bz2'
@@ -14,12 +13,13 @@ token2embedding = {}
 with bz2.open(WORD_EMBEDDING_FILE) as f:
     token_vectors = f.readlines()
     vob_size, dim = token_vectors[0].split()
+    
 print('load embedding file: {} end!'.format(WORD_EMBEDDING_FILE))
 
 def get_embedding(vocabulary: set):
     for line in tqdm(token_vectors[1:]):
         tokens = line.split()
-        token = tokens[0].decode("utf-8")
+        token = tokens[0].decode('utf-8')
         if token in vocabulary:
             token2embedding[token] = list(map(float, tokens[1:]))
             assert len(token2embedding[token]) == int(dim)

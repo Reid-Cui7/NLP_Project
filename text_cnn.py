@@ -24,18 +24,15 @@ class TextCNN(nn.Module):
 
             return x
 
-    def forward(self, input_ids=None, labels=None):
+    def forward(self, input_ids=None):
         word_embeddings = self.embedding(input_ids)
-        sentence_embeddings = word_embeddings.unsqueeze(1) # Conv2d
+        sentence_embedding = word_embeddings.unsqueeze(1)
 
-        out = torch.cat([self.conv_and_pool(sentence_embeddings, conv) for conv in self.convs], 1)
+        out = torch.cat([self.conv_and_pool(sentence_embedding, conv) for conv in self.convs], 1)
         out = self.dropout(out)
         out = self.fc(out)
 
-        if labels:
-            loss_fn = nn.CrossEntropyLoss()
-            loss = loss_fn(out, labels)
-            outputs = (loss, ) + outputs
+        outputs = (out, )
 
         return outputs
 
