@@ -12,15 +12,15 @@ def get_all_vocabulary(train_file_path, vocab_size):
     CUT, SENTENCE = 'cur', 'sentence'
     corpus = pd.read_csv(train_file_path)
     corpus[CUT] = corpus[SENTENCE].apply(lambda s: ' '.join(list(jieba.cut(s))))
-    all_words = reduce(add, map(lambda s: s.split(), corpus[CUT].values))
-    chose_words = Counter(all_words).most_common(vocab_size)
+    sentence_counters = map(Counter, map(lambda s: s.split(), corpus[CUT].values))
+    chose_words = reduce(add, sentence_counters).most_common(vocab_size)
 
     return [w for w, _ in chose_words]
 
 def tokenizer(sentence, vocab: dict):
     UNK = 1
     ids = [vocab.get(word, UNK) for word in jieba.cut(sentence)]
-    
+
     return ids
 
 def get_train_data(train_file):
