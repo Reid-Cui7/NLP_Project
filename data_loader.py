@@ -3,10 +3,23 @@ import numpy as np
 import jieba
 from collections import defaultdict
 import torch
+from operator import add
+from functools import reduce
+from collections import Counter
 
+val_ratio = 0.2
+train_file = 'dataset/train.csv'
 
 def get_all_vocabulary(train_file_path, vocab_size):
-    ...
+    CUT, SENTENCE = 'cur', 'sentence'
+    corpus = pd.read_csv(train_file_path)
+    corpus[CUT] = corpus[SENTENCE].apply(lambda s: ' '.join(list(jieba.cut(s))))
+
+    all_words = reduce(add, map(lambda s: s.split(), corpus[CUT].values))
+    chose_words = Counter(all_words).most_common(vocab_size)
+
+    return chose_words
+
 
 def tokenizer(sentence, vocab: dict):
     UNK = 1
@@ -14,9 +27,9 @@ def tokenizer(sentence, vocab: dict):
     return ids
 
 
-val_ratio = 0.2
-train_file = 'dataset/train.csv'
-content = pd.read_csv(train_file)
+def get_train_data(train_file):
+    ...
+
 X_train, y_train = defaultdict(list), []
 X_val, y_val = defaultdict(list), []
 num_val = int(len(content) * val_ratio)
